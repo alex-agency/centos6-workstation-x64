@@ -1,6 +1,8 @@
 FROM alexagency/centos6-gnome
 MAINTAINER Alex
 
+USER root
+
 RUN yum -y update && \
     yum -y install xorg-x11-server-utils which prelink git wget tar bzip2 firefox meld && \
     yum clean all && rm -rf /tmp/* && \
@@ -26,7 +28,9 @@ Categories=Application;Development;Java\n\
 Version=1.0\n\
 Type=Application\n\
 Terminal=0"\
->> /usr/share/applications/jvisualvm.desktop
+>> /usr/share/applications/jvisualvm.desktop && \
+    cp /usr/share/applications/jvisualvm.desktop /home/user/Desktop && \
+    chmod -v u+x /home/user/Desktop/jvisualvm.desktop
 
 # Sublime Text 3
 ENV SUBLIME_URL http://c758482.r82.cf2.rackcdn.com/sublime_text_3_build_3083_x64.tar.bz2
@@ -48,6 +52,8 @@ Name=New Window\n\
 Exec=sublime -n\n\
 TargetEnvironment=Unity"\
 >> /usr/share/applications/sublime3.desktop && \
+    cp /usr/share/applications/sublime3.desktop /home/user/Desktop && \
+    chmod -v u+x /home/user/Desktop/sublime3.desktop && \
     mkdir /root/.config && \
     touch /root/.config/sublime-text-3 && \
     chown -R root:root /root/.config/sublime-text-3 && \
@@ -63,7 +69,8 @@ RUN wget $ECLIPSE_URL && \
     sed -i s@-vmargs@-vm\\n/usr/java/latest/jre/bin/java\\n-vmargs@g /usr/eclipse/eclipse.ini
 
 # Configure profile
-RUN echo "xhost +" >> /home/user/.bashrc && \
+RUN echo "sudo chown user:user /home/user/shared" >> /home/user/.bashrc && \
+    echo "xhost +" >> /home/user/.bashrc && \
     echo "alias install='sudo yum install'" >> /home/user/.bashrc && \
     echo "alias docker='sudo docker'" >> /home/user/.bashrc && \
     echo -e '\
@@ -81,7 +88,7 @@ else \n\
 --hostname $X86_HOSTMANE \
 --name $X86_HOSTMANE \
 --link `hostname`:$X86_HOSTMANE \
--v /shared/user:/home/user \
+-v /shared:/home/user/shared \
 alexagency/centos6-workstation-x86" \n\
 fi \n '\
 >> /home/user/.bashrc && \
@@ -97,7 +104,9 @@ Icon=firefox\n\
 Terminal=false\n\
 Type=Application\n\
 Categories=Network;WebBrowser;'\
->> /usr/share/applications/firefox.desktop
+>> /usr/share/applications/firefox.desktop && \
+    cp /usr/share/applications/firefox.desktop /home/user/Desktop && \
+    chmod -v u+x /home/user/Desktop/firefox.desktop
 
 # Firefox x86
 RUN echo -e '\
@@ -123,7 +132,9 @@ Categories=Application;Development;Java;IDE\n\
 Version=1.0\n\
 Type=Application\n\
 Terminal=false'\
->> /usr/share/applications/eclipse.desktop
+>> /usr/share/applications/eclipse.desktop && \
+    cp /usr/share/applications/eclipse.desktop /home/user/Desktop && \
+    chmod -v u+x /home/user/Desktop/eclipse.desktop
 
 # Eclipse x86
 RUN echo -e '\
@@ -141,7 +152,6 @@ Terminal=true'\
 
 # Default user
 USER user
-ENV HOME /home/user
 
-# Entrypoint
-CMD ["sudo", "supervisord"]
+# Persist data volume
+VOLUME ["/home/user/shared"]
