@@ -43,8 +43,8 @@ RDP port: 3389
 Credentials:
 
 ```
-user:		password
-root:		password
+user:	password
+root:	password
 ```
 
 ### Build
