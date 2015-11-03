@@ -19,18 +19,13 @@ RUN alternatives --install /usr/lib64/mozilla/plugins/libjavaplugin.so libjavapl
 # Visual VM
 RUN echo -e "\
 [Desktop Entry]\n\
-Encoding=UTF-8\n\
 Name=Visual VM\n\
-Comment=Visual VM\n\
 Exec=/usr/java/latest/bin/jvisualvm\n\
 Icon=gnome-panel-fish\n\
 Categories=Application;Development;Java\n\
-Version=1.0\n\
 Type=Application\n\
-Terminal=0"\
->> /usr/share/applications/jvisualvm.desktop && \
-    cp /usr/share/applications/jvisualvm.desktop /home/user/Desktop && \
-    chmod -v u+x /home/user/Desktop/jvisualvm.desktop
+Terminal=false"\
+>> /usr/share/applications/jvisualvm.desktop
 
 # Sublime Text 3
 ENV SUBLIME_URL http://c758482.r82.cf2.rackcdn.com/sublime_text_3_build_3083_x64.tar.bz2
@@ -52,12 +47,11 @@ Name=New Window\n\
 Exec=sublime -n\n\
 TargetEnvironment=Unity"\
 >> /usr/share/applications/sublime3.desktop && \
-    cp /usr/share/applications/sublime3.desktop /home/user/Desktop && \
-    chmod -v u+x /home/user/Desktop/sublime3.desktop && \
-    mkdir /root/.config && \
-    touch /root/.config/sublime-text-3 && \
-    chown -R root:root /root/.config/sublime-text-3 && \
-    sed -i 's@gedit.desktop@gedit.desktop;sublime3.desktop@g' /usr/share/applications/defaults.list
+    cp /usr/share/applications/sublime3.desktop \
+    /home/user/Desktop/sublime3.desktop && \
+    chown user:user /home/user/Desktop/sublime3.desktop && \
+    sed -i 's\gedit.desktop\gedit.desktop;sublime3.desktop\g' \
+    /usr/share/applications/defaults.list
 
 # Eclipse Luna x64
 ENV ECLIPSE_URL http://ftp.fau.de/eclipse/technology/epp/downloads/\
@@ -65,12 +59,10 @@ release/mars/1/eclipse-jee-mars-1-linux-gtk-x86_64.tar.gz
 RUN wget $ECLIPSE_URL && \
     tar -zxvf `echo "${ECLIPSE_URL##*/}"` -C /usr/ && \
     ln -s /usr/eclipse/eclipse /usr/bin/eclipse && \
-    rm -f `echo "${ECLIPSE_URL##*/}"` && \
-    sed -i s@-vmargs@-vm\\n/usr/java/latest/jre/bin/java\\n-vmargs@g /usr/eclipse/eclipse.ini
+    rm -f `echo "${ECLIPSE_URL##*/}"`
 
 # Configure profile
-RUN echo "sudo chown user:user /home/user/shared" >> /home/user/.bashrc && \
-    echo "xhost +" >> /home/user/.bashrc && \
+RUN echo "xhost +" >> /home/user/.bashrc && \
     echo "alias install='sudo yum install'" >> /home/user/.bashrc && \
     echo "alias docker='sudo docker'" >> /home/user/.bashrc && \
     echo -e '\
@@ -88,70 +80,75 @@ else \n\
 --hostname $X86_HOSTMANE \
 --name $X86_HOSTMANE \
 --link `hostname`:$X86_HOSTMANE \
--v /shared:/home/user/shared \
+-v /shared:/home/user/Public \
 alexagency/centos6-workstation-x86" \n\
 fi \n '\
 >> /home/user/.bashrc && \
     shopt -s expand_aliases
 
+# Startup script
+RUN echo "#!/bin/sh" > /etc/init.d/startup && \
+    echo "chown user:user /home/user/Public &" >> /etc/init.d/startup && \
+    chmod +x /etc/init.d/startup && \
+    echo -e "\
+[program:startup] \n\
+command=/etc/init.d/startup restart \n\
+stderr_logfile=/var/log/supervisor/startup-error.log \n\
+stdout_logfile=/var/log/supervisor/startup.log "\ 
+> /etc/supervisord.d/startup.conf
+
 # Firefox x64
-RUN echo -e '\
+RUN echo -e "\
 [Desktop Entry]\n\
-Encoding=UTF-8\n\
 Name=Firefox\n\
 Exec=firefox %u\n\
 Icon=firefox\n\
 Terminal=false\n\
 Type=Application\n\
-Categories=Network;WebBrowser;'\
+Categories=Network;WebBrowser;"\
 >> /usr/share/applications/firefox.desktop && \
-    cp /usr/share/applications/firefox.desktop /home/user/Desktop && \
-    chmod -v u+x /home/user/Desktop/firefox.desktop
+    cp /usr/share/applications/firefox.desktop \
+    /home/user/Desktop/firefox.desktop && \
+    chown user:user /home/user/Desktop/firefox.desktop
 
 # Firefox x86
-RUN echo -e '\
+RUN echo -e "\
 [Desktop Entry]\n\
-Encoding=UTF-8\n\
 Name=Firefox x86\n\
-Exec=sh -c "source /home/user/.bashrc;eval workstation-x86 firefox"\n\
+Exec=sh -c 'source /home/user/.bashrc;eval workstation-x86 firefox'\n\
 Icon=gnome-panel-fish\n\
 Terminal=true\n\
 Type=Application\n\
-Categories=Network;WebBrowser;'\
+Categories=Network;WebBrowser;"\
 >> /usr/share/applications/firefox-x86.desktop
 
 # Eclipse x64
-RUN echo -e '\
+RUN echo -e "\
 [Desktop Entry]\n\
-Encoding=UTF-8\n\
 Name=Eclipse\n\
-Comment=Eclipse\n\
 Exec=eclipse\n\
 Icon=/usr/eclipse/icon.xpm\n\
 Categories=Application;Development;Java;IDE\n\
-Version=1.0\n\
 Type=Application\n\
-Terminal=false'\
+Terminal=false"\
 >> /usr/share/applications/eclipse.desktop && \
-    cp /usr/share/applications/eclipse.desktop /home/user/Desktop && \
-    chmod -v u+x /home/user/Desktop/eclipse.desktop
+    cp /usr/share/applications/eclipse.desktop \
+    /home/user/Desktop/eclipse.desktop && \
+    chown user:user /home/user/Desktop/eclipse.desktop
 
 # Eclipse x86
-RUN echo -e '\
+RUN echo -e "\
 [Desktop Entry]\n\
-Encoding=UTF-8\n\
 Name=Eclipse x86\n\
-Comment=Eclipse\n\
-Exec=sh -c "source /home/user/.bashrc;eval workstation-x86 eclipse"\n\
+Exec=sh -c 'source /home/user/.bashrc;eval workstation-x86 eclipse'\n\
 Icon=/usr/eclipse/icon.xpm\n\
 Categories=Application;Development;Java;IDE\n\
-Version=1.0\n\
 Type=Application\n\
-Terminal=true'\
+Terminal=true"\
 >> /usr/share/applications/eclipse-x86.desktop
 
 # Default user
 USER user
 
 # Persist data volume
-VOLUME ["/home/user/shared"]
+VOLUME ["/home/user/Public"]
